@@ -1,0 +1,38 @@
+services:
+  kekik-app:
+    image: ghcr.io/awaiden/kekik-api:latest
+    container_name: kekik_app
+    restart: always
+    networks:
+      - kekik-net
+    environment:
+      - DATABASE_URL=postgresql://${DB_USER:-postgres}:${DB_PASSWORD:-kekik_pass_123}@kekik-db:5432/${DB_NAME:-kekik_db}
+      - PORT=3000
+    depends_on:
+      kekik-db:
+        condition: service_healthy
+
+  kekik-db:
+    image: postgres:16-alpine
+    container_name: kekik_db
+    restart: always
+    networks:
+      - kekik-net
+    environment:
+      POSTGRES_USER: ${DB_USER:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-kekik_pass_123}
+      POSTGRES_DB: ${DB_NAME:-kekik_db}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    volumes:
+      - kekik_data:/var/lib/postgresql/data
+
+networks:
+  kekik-net:
+    driver: bridge
+
+volumes:
+  kekik_data:

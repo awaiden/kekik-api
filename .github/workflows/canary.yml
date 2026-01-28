@@ -1,0 +1,23 @@
+name: Push Canary Image
+on:
+  push:
+    branches: ["master", "main"]
+
+jobs:
+  build-canary:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+      - run: curl -sSL https://nixpacks.com/install.sh | bash
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - run: |
+          nixpacks build . --name ghcr.io/${{ github.repository }}:canary
+          docker push ghcr.io/${{ github.repository }}:canary
